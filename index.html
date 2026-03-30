@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Workflow Engine</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #f0f5fb;
+    font-family: Georgia, 'Times New Roman', serif;
+    color: #1a2e42;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  header {
+    background: #fff;
+    border-bottom: 2px solid #c8ddf0;
+    padding: 12px 20px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(30,90,160,0.06);
+  }
+  .practice-label { font-size: 9px; letter-spacing: 0.2em; color: #4a80b8; text-transform: uppercase; margin-bottom: 3px; }
+  header h1 { font-size: 17px; font-weight: normal; color: #1a3358; }
+  .meta { text-align: right; font-size: 9px; color: #6a90b8; line-height: 1.6; }
+
+  .body { display: flex; flex: 1; min-height: 0; overflow: hidden; }
+
+  /* LEFT NAV */
+  .left-nav {
+    width: 190px; flex-shrink: 0; background: #fff;
+    border-right: 1px solid #d0e4f5; padding: 14px 0;
+    display: flex; flex-direction: column; overflow-y: auto;
+  }
+  .nav-section-label { padding: 0 14px; margin-bottom: 8px; font-size: 8.5px; letter-spacing: 0.18em; color: #7aaad8; text-transform: uppercase; }
+  .nav-btn {
+    display: block; width: 100%; text-align: left; padding: 9px 14px;
+    background: transparent; border: none; border-left: 3px solid transparent;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .nav-btn:hover { background: #f0f7ff; }
+  .nav-btn.active { background: #e8f2fc; border-left-color: #2e74c0; }
+  .nav-row { display: flex; align-items: center; gap: 8px; }
+  .nav-icon { font-size: 11px; color: #9abdd8; flex-shrink: 0; }
+  .nav-btn.active .nav-icon { color: #2e74c0; }
+  .nav-label { font-size: 10.5px; color: #4a6e90; line-height: 1.3; }
+  .nav-btn.active .nav-label { color: #1a3a6a; font-weight: bold; }
+  .nav-sub { font-size: 8.5px; color: #9ab8d4; margin-top: 1px; }
+  .nav-btn.active .nav-sub { color: #5a8ab8; }
+
+  .brands-box { margin: 16px 12px 0; padding: 10px; background: #f0f7ff; border-radius: 5px; border: 1px solid #c8ddf0; }
+  .brands-title { font-size: 8px; letter-spacing: 0.14em; color: #7aaad8; text-transform: uppercase; margin-bottom: 6px; }
+  .brand-item { font-size: 9px; color: #3a6090; padding: 2px 0; border-bottom: 1px solid #daeaf8; line-height: 1.4; }
+  .brand-item:last-child { border-bottom: none; }
+
+  /* CENTER */
+  .center { flex: 1; display: flex; flex-direction: column; padding: 16px 20px; gap: 12px; min-width: 0; overflow: hidden; }
+
+  .demo-header { flex-shrink: 0; }
+  .demo-subtitle { font-size: 8.5px; letter-spacing: 0.18em; color: #5a8ab8; text-transform: uppercase; margin-bottom: 4px; }
+  .demo-title { font-size: 17px; font-weight: normal; color: #1a3358; }
+  .demo-desc { margin-top: 4px; font-size: 11.5px; color: #4a6a8a; line-height: 1.55; }
+
+  .input-area { flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; }
+  textarea {
+    background: #fff; border: 1.5px solid #b8d4ee; border-radius: 5px;
+    padding: 10px 12px; color: #1a2e42; font-size: 11.5px;
+    font-family: Georgia, serif; line-height: 1.65; resize: none;
+    outline: none; width: 100%; height: 90px;
+    box-shadow: inset 0 1px 3px rgba(30,90,160,0.05); transition: border-color 0.2s;
+  }
+  textarea::placeholder { color: #a8c4de; }
+  textarea:focus { border-color: #2e74c0; box-shadow: 0 0 0 3px rgba(46,116,192,0.1); }
+
+  .btn-row { display: flex; align-items: center; gap: 10px; }
+  .run-btn {
+    background: #2e74c0; border: none; border-radius: 4px; padding: 8px 18px;
+    color: #fff; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+    cursor: pointer; font-family: Georgia, serif; transition: all 0.2s;
+    box-shadow: 0 2px 6px rgba(46,116,192,0.25);
+  }
+  .run-btn:hover:not(:disabled) { background: #1a5aaa; }
+  .run-btn:disabled { background: #a8c4de; cursor: default; box-shadow: none; }
+  .shortcut-hint { font-size: 8.5px; color: #9ab8d4; }
+
+  /* OUTPUT */
+  .output-box {
+    flex: 1; background: #fff; border: 1.5px solid #c8ddf0; border-radius: 7px;
+    padding: 14px 16px; overflow-y: auto; display: none;
+    box-shadow: 0 2px 10px rgba(30,90,160,0.07);
+  }
+  .output-box.visible { display: block; }
+  .output-label { font-size: 8px; letter-spacing: 0.18em; color: #7aaad8; text-transform: uppercase; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #e0edf8; }
+  .out-header { color: #1a5aaa; font-weight: bold; margin-top: 14px; font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; border-top: 1px solid #daeaf8; padding-top: 10px; }
+  .out-header.first { margin-top: 0; border-top: none; padding-top: 0; }
+  .out-text { font-size: 11.5px; line-height: 1.8; color: #1a2e42; white-space: pre-wrap; font-family: Georgia, serif; }
+  .thinking { color: #7aaad8; font-size: 11px; font-style: italic; }
+  .error { color: #c04040; font-size: 11px; line-height: 1.6; }
+
+  /* RIGHT */
+  .right-panel {
+    width: 155px; flex-shrink: 0; background: #fff; border-left: 1px solid #d0e4f5;
+    padding: 16px 13px; font-size: 9.5px; overflow-y: auto;
+  }
+  .rp-label { font-size: 8px; letter-spacing: 0.18em; color: #7aaad8; text-transform: uppercase; margin-bottom: 10px; }
+  .rp-item { margin-bottom: 9px; padding-bottom: 9px; border-bottom: 1px solid #eaf3fc; }
+  .rp-key { color: #7aaad8; margin-bottom: 1px; font-size: 8.5px; }
+  .rp-val { color: #2a4a6a; line-height: 1.4; font-size: 9px; }
+  .auto-list { margin-top: 14px; }
+  .auto-title { font-size: 8px; letter-spacing: 0.15em; color: #7aaad8; text-transform: uppercase; margin-bottom: 7px; }
+  .auto-item { font-size: 9px; color: #4a6a8a; padding: 2.5px 0; display: flex; align-items: center; gap: 5px; border-bottom: 1px solid #f4f8fd; }
+  .dash { color: #2e74c0; }
+
+  footer {
+    background: #fff; border-top: 1px solid #d0e4f5; padding: 7px 20px;
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 8.5px; color: #9ab8d4; flex-shrink: 0;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="practice-label">Seay Wellness · Root Health NC</div>
+    <h1>AI Workflow Engine</h1>
+  </div>
+  <div class="meta">503 US 70 East · Garner, NC<br><span style="color:#2e74c0">6 Workflows · No Extra Cost</span></div>
+</header>
+
+<div class="body">
+
+  <div class="left-nav">
+    <div class="nav-section-label">Workflows</div>
+    <button class="nav-btn active" onclick="setDemo(0)"><div class="nav-row"><span class="nav-icon">⬡</span><div><div class="nav-label">Symptom → Root Cause</div><div class="nav-sub">New Patient Triage</div></div></div></button>
+    <button class="nav-btn" onclick="setDemo(1)"><div class="nav-row"><span class="nav-icon">◈</span><div><div class="nav-label">Lab Findings → Protocol</div><div class="nav-sub">Protocol Generator</div></div></div></button>
+    <button class="nav-btn" onclick="setDemo(2)"><div class="nav-row"><span class="nav-icon">◇</span><div><div class="nav-label">Condition → Funnel Copy</div><div class="nav-sub">Unlock Program Marketing</div></div></div></button>
+    <button class="nav-btn" onclick="setDemo(3)"><div class="nav-row"><span class="nav-icon">○</span><div><div class="nav-label">Patient Q&amp;A</div><div class="nav-sub">Front Desk Assistant</div></div></div></button>
+    <button class="nav-btn" onclick="setDemo(4)"><div class="nav-row"><span class="nav-icon">◉</span><div><div class="nav-label">Diagnosis Generator</div><div class="nav-sub">Dx + Treatment Plan</div></div></div></button>
+    <button class="nav-btn" onclick="setDemo(5)"><div class="nav-row"><span class="nav-icon">△</span><div><div class="nav-label">Exercise Generator</div><div class="nav-sub">Rehab &amp; Movement Rx</div></div></div></button>
+    <div class="brands-box">
+      <div class="brands-title">Core Brands</div>
+      <div class="brand-item">Physica Energetics</div>
+      <div class="brand-item">Professional Health Products</div>
+      <div class="brand-item">DesBio</div>
+      <div class="brand-item">CellCore Biosciences</div>
+      <div class="brand-item">Researched Nutritionals</div>
+    </div>
+  </div>
+
+  <div class="center">
+    <div class="demo-header">
+      <div class="demo-subtitle" id="demo-subtitle">New Patient Triage</div>
+      <h2 class="demo-title" id="demo-title">Symptom → Root Cause</h2>
+      <p class="demo-desc" id="demo-desc">Patient describes their symptoms. AI maps to terrain, identifies root cause clusters, and routes to the right Unlock program.</p>
+    </div>
+    <div class="input-area">
+      <textarea id="user-input" placeholder="Patient says: I've been exhausted for 3 years, can't lose weight, hair is falling out, brain fog is terrible, I freeze in cold rooms, and my doctor says all my labs are 'normal'..."></textarea>
+      <div class="btn-row">
+        <button class="run-btn" id="run-btn" onclick="runDemo()">Run Terrain Analysis</button>
+        <span class="shortcut-hint">⌘ + Enter to run</span>
+      </div>
+    </div>
+    <div class="output-box" id="output-box">
+      <div class="output-label">AI Output — Seay Wellness / Root Health NC</div>
+      <div id="output-content"></div>
+    </div>
+  </div>
+
+  <div class="right-panel">
+    <div class="rp-label">Connected To</div>
+    <div class="rp-item"><div class="rp-key">Practice</div><div class="rp-val">Root Health NC + Seay Wellness</div></div>
+    <div class="rp-item"><div class="rp-key">AI Model</div><div class="rp-val">Claude Sonnet 4</div></div>
+    <div class="rp-item"><div class="rp-key">CRM</div><div class="rp-val">GoHighLevel</div></div>
+    <div class="rp-item"><div class="rp-key">Scheduling</div><div class="rp-val">JaneApp</div></div>
+    <div class="rp-item"><div class="rp-key">Labs</div><div class="rp-val">Vibrant Wellness · Diagnostic Solutions</div></div>
+    <div class="auto-list">
+      <div class="auto-title">Automatable</div>
+      <div class="auto-item"><span class="dash">—</span> Patient triage</div>
+      <div class="auto-item"><span class="dash">—</span> Lab interpretation</div>
+      <div class="auto-item"><span class="dash">—</span> Protocol generation</div>
+      <div class="auto-item"><span class="dash">—</span> Dx + treatment plans</div>
+      <div class="auto-item"><span class="dash">—</span> Exercise Rx</div>
+      <div class="auto-item"><span class="dash">—</span> GHL funnel copy</div>
+      <div class="auto-item"><span class="dash">—</span> Email/SMS sequences</div>
+      <div class="auto-item"><span class="dash">—</span> Patient education</div>
+      <div class="auto-item"><span class="dash">—</span> ROF generation</div>
+      <div class="auto-item"><span class="dash">—</span> Cash-pay transition</div>
+      <div class="auto-item"><span class="dash">—</span> Unlock program routing</div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <span>Covered by your Claude.ai subscription — no API charges</span>
+  <span>seaywellness.com · roothealthnc.com</span>
+</footer>
+
+<script>
+const DEMOS = [
+  {
+    subtitle:"New Patient Triage", title:"Symptom → Root Cause",
+    desc:"Patient describes their symptoms. AI maps to terrain, identifies root cause clusters, and routes to the right Unlock program.",
+    placeholder:"Patient says: I've been exhausted for 3 years, can't lose weight, hair is falling out, brain fog is terrible, I freeze in cold rooms, and my doctor says all my labs are 'normal'...",
+    btnLabel:"Run Terrain Analysis",
+    system:`You are a clinical AI assistant for Root Health NC, Garner, NC, run by Dr. Adam Seay, DC. Drainage-first, terrain-based approach rooted in Physica Energetics protocols.
+
+When a patient describes symptoms:
+1. Identify PRIMARY root cause terrain clusters (Thyroid, Adrenal, Mold/Mycotoxin, Gut, Hormones, Brain/Neurological, SIBO, Lyme/Co-infections, Heavy Metals, etc.)
+2. Note secondary terrain overlaps
+3. Suggest which "Unlock Your ___" program is the best entry point
+4. List 3-5 key functional lab panels (Vibrant Wellness or Diagnostic Solutions GI-MAP)
+5. Brief clinical insight on WHY these symptoms cluster in terrain terms
+
+Use these exact section headers (all caps, on their own line):
+PRIMARY TERRAIN CLUSTER
+SECONDARY OVERLAPS
+RECOMMENDED UNLOCK PROGRAM
+PRIORITY LAB PANELS
+CLINICAL INSIGHT
+
+Specific and clinically credible. Do not diagnose. ~250 words.`
+  },
+  {
+    subtitle:"Clinical Protocol Generator", title:"Lab Findings → Protocol",
+    desc:"Enter notable lab findings. AI generates a terrain-informed, drainage-first supplement protocol using your core brands.",
+    placeholder:"Example: GI-MAP — H. pylori 2+, Zonulin elevated, SIgA low, Candida spp present. Vibrant Mycotoxin — Ochratoxin A elevated. OAT — elevated arabinose, low CoQ10 markers...",
+    btnLabel:"Generate Protocol",
+    system:`You are a clinical protocol AI for Root Health NC run by Dr. Adam Seay, DC. Drainage-first, terrain-based approach.
+
+Core supplement brands (use ONLY these):
+- Physica Energetics (drainage-first — always the starting point)
+- Professional Health Products (PHP)
+- DesBio (homeopathic drainage, UNDA compounds, nosodes)
+- CellCore Biosciences (binders, mitochondrial support; sequencing-critical)
+- Researched Nutritionals (immune, mitochondrial, Lyme/co-infection support)
+
+When given lab findings:
+1. Summarize key terrain implications (2-3 sentences)
+2. Phased protocol with these exact headers on their own lines:
+PHASE 1: DRAINAGE AND TERRAIN PREP
+PHASE 2: PRIMARY TARGETED SUPPORT
+PHASE 3: REPAIR AND RESTORATION
+3. Each supplement: Brand > Product name > Dose/frequency > Rationale
+4. Flag sequencing notes (open drainage before CellCore binders)
+
+Mark highest-priority items with STAR: at start of line. ~300 words. Do not diagnose.`
+  },
+  {
+    subtitle:"Unlock Program Marketing", title:"Condition → Funnel Copy",
+    desc:"Pick a condition. AI writes opt-in page headline, hook, and email subject lines for your GHL funnel.",
+    placeholder:"Enter a condition: e.g., Mold, Thyroid, Gut, SIBO, Hormones, Brain Fog, Lyme, Heavy Metals, Autoimmune...",
+    btnLabel:"Generate Funnel Copy",
+    system:`You are a direct-response copywriter for Root Health NC's "Root Cause Unlocked" program system. Dr. Adam Seay, DC, Garner, NC. Cash-pay programs for patients frustrated with conventional medicine.
+
+Apply Sabri Suby's market awareness framework. Problem-aware audience told their labs are "normal."
+
+Use these exact section headers on their own lines:
+HERO HEADLINE
+HOOK PARAGRAPH
+OPT-IN CTA
+EMAIL SUBJECT LINES
+SMS HOOK
+GHL TAG SUGGESTION
+
+Voice: Direct, credible, empathetic but not soft. Real clinical concepts. Not hype-y.`
+  },
+  {
+    subtitle:"Front Desk AI Assistant", title:"Patient Q&A",
+    desc:"Real patient questions answered in Root Health NC's clinical voice. Powers website chat, email templates, and staff training.",
+    placeholder:"Patient asks: My doctor told me my thyroid is fine but I have every symptom of hypothyroidism. Can functional medicine help? What would you actually test differently?",
+    btnLabel:"Get AI Response",
+    system:`You are the AI assistant for Root Health NC, Garner, NC, run by Dr. Adam Seay, DC, 20+ years experience. Also representing Seay Wellness chiropractic.
+
+Answer patient questions warmly and credibly to build trust toward a consultation. Validate frustration without bashing doctors. Explain root-cause approach. Reference functional labs (Vibrant Wellness panels, GI-MAP) when relevant. End with soft CTA toward scheduling.
+
+Tone: Warm, knowledgeable, not salesy. 150-200 words. Do not diagnose or prescribe.`
+  },
+  {
+    subtitle:"Clinical Dx + Treatment Plan", title:"Diagnosis Generator",
+    desc:"Enter patient presentation, exam findings, and relevant history. AI generates working diagnoses with ICD-10 codes and a complete treatment plan spanning chiropractic and functional medicine.",
+    placeholder:"Patient: 42F. CC: chronic low back pain 6/10, worse with sitting, radiates to left buttock. PMH: hypothyroid (medicated), frequent UTIs, poor sleep. Exam: reduced lumbar ROM, positive Kemp's left, L4-L5 hypomobility, hypertonic left QL and piriformis. SLR negative. No red flags...",
+    btnLabel:"Generate Dx + Treatment Plan",
+    system:`You are a clinical documentation AI for Seay Wellness (chiropractic) and Root Health NC (functional medicine), Garner, NC. Dr. Adam Seay, DC — 20+ years, terrain-based, drainage-first care integrated with chiropractic.
+
+Generate a complete clinical document using these exact section headers on their own lines:
+
+WORKING DIAGNOSES
+2-4 prioritized diagnoses. Each: name, ICD-10 code, 2-3 sentence rationale.
+
+FUNCTIONAL MEDICINE TERRAIN OVERLAY
+Functional/terrain contributors (systemic inflammation, gut dysbiosis, hormonal imbalance, toxin burden, HPA dysregulation).
+
+TREATMENT PLAN
+
+CHIROPRACTIC PHASE
+Frequency, duration, techniques/modalities, phase goals.
+
+FUNCTIONAL MEDICINE PHASE
+Labs (Vibrant Wellness and/or GI-MAP). Supplements using ONLY: Physica Energetics, Professional Health Products, DesBio, CellCore Biosciences, Researched Nutritionals. Drainage-first sequencing note.
+
+PRECAUTIONS AND REFERRAL FLAGS
+
+OUTCOME MEASURES
+2-3 measurable outcome tools.
+
+Clinically precise. Proper medical terminology. Do not fabricate findings. ~400 words.`
+  },
+  {
+    subtitle:"Rehab & Movement Rx", title:"Exercise Generator",
+    desc:"Enter patient diagnosis, limitations, and goals. AI generates a structured therapeutic exercise program with progressions, sets, reps, and clinical rationale.",
+    placeholder:"Patient: 38M. Dx: lumbar disc herniation L4-L5, moderate, without neurological deficit. Limitations: pain with flexion, weak core, desk worker 9hrs/day, deconditioned. Goal: return to recreational golf in 8 weeks. No gym — home program needed...",
+    btnLabel:"Generate Exercise Program",
+    system:`You are a clinical exercise prescription AI for Seay Wellness and Root Health NC, Garner, NC. Dr. Adam Seay, DC — neuroscience-based rehabilitation integrated with chiropractic.
+
+Generate a complete therapeutic exercise program using these exact section headers on their own lines:
+
+PROGRAM OVERVIEW
+Patient profile, goals, total duration, phases, equipment needed.
+
+PHASE 1: PAIN CONTROL AND STABILITY (Weeks 1-2)
+Each exercise: name, execution steps, sets x reps, frequency, clinical rationale, progression criteria.
+
+PHASE 2: STRENGTH AND MOTOR CONTROL (Weeks 3-5)
+Same format.
+
+PHASE 3: FUNCTIONAL INTEGRATION (Weeks 6-8)
+Same format. Activity-specific movements where relevant.
+
+NEUROLOGICAL ACTIVATION NOTE
+1-2 sentences on proprioceptive/neuroscience rationale.
+
+CONTRAINDICATIONS FOR THIS PATIENT
+
+HOME PROGRAM SUMMARY
+Phase 1 exercises only: name, sets/reps. No explanations.
+
+Evidence-based, correctly sequenced. ~400 words.`
+  }
+];
+
+const HEADERS = ["PRIMARY TERRAIN CLUSTER","SECONDARY OVERLAPS","RECOMMENDED UNLOCK","PRIORITY LAB","CLINICAL INSIGHT","PHASE 1","PHASE 2","PHASE 3","DRAINAGE AND TERRAIN","PRIMARY TARGETED","REPAIR AND RESTORATION","HERO HEADLINE","HOOK PARAGRAPH","OPT-IN CTA","EMAIL SUBJECT","SMS HOOK","GHL TAG","WORKING DIAGNOSES","FUNCTIONAL MEDICINE TERRAIN","TREATMENT PLAN","CHIROPRACTIC PHASE","FUNCTIONAL MEDICINE PHASE","PRECAUTIONS AND REFERRAL","OUTCOME MEASURES","PROGRAM OVERVIEW","NEUROLOGICAL ACTIVATION","CONTRAINDICATIONS","HOME PROGRAM SUMMARY"];
+
+let currentDemo = 0, typeInterval = null;
+
+function setDemo(i) {
+  currentDemo = i;
+  const d = DEMOS[i];
+  document.querySelectorAll('.nav-btn').forEach((b,idx) => b.classList.toggle('active', idx===i));
+  document.getElementById('demo-subtitle').textContent = d.subtitle;
+  document.getElementById('demo-title').textContent = d.title;
+  document.getElementById('demo-desc').textContent = d.desc;
+  document.getElementById('user-input').placeholder = d.placeholder;
+  document.getElementById('run-btn').textContent = d.btnLabel;
+  document.getElementById('user-input').value = '';
+  document.getElementById('output-box').classList.remove('visible');
+  document.getElementById('output-content').innerHTML = '';
+}
+
+function isHeader(line) {
+  const t = line.trim().toUpperCase();
+  return HEADERS.some(h => t.startsWith(h));
+}
+
+function renderOutput(text) {
+  const c = document.getElementById('output-content');
+  c.innerHTML = '';
+  let first = true;
+  text.split('\n').forEach(line => {
+    const div = document.createElement('div');
+    if (isHeader(line) && line.trim()) {
+      div.className = first ? 'out-header first' : 'out-header';
+      div.textContent = line; first = false;
+    } else {
+      div.className = 'out-text';
+      div.textContent = line || '\u00A0';
+      if (line.trim().startsWith('STAR:')) div.style.color = '#1a5aaa';
+    }
+    c.appendChild(div);
+  });
+}
+
+function typewrite(text) {
+  if (typeInterval) clearInterval(typeInterval);
+  document.getElementById('output-content').innerHTML = '<div class="thinking">Writing output...</div>';
+  let i=0, built='';
+  typeInterval = setInterval(() => {
+    if (i < text.length) { built += text[i++]; if (i%40===0||i===text.length) renderOutput(built); }
+    else { clearInterval(typeInterval); renderOutput(text); }
+  }, 5);
+}
+
+async function runDemo() {
+  const input = document.getElementById('user-input').value.trim();
+  if (!input) return;
+  const btn = document.getElementById('run-btn');
+  btn.disabled = true; btn.textContent = 'Processing...';
+  const ob = document.getElementById('output-box');
+  ob.classList.add('visible');
+  document.getElementById('output-content').innerHTML = '<div class="thinking">Analyzing...</div>';
+
+  try {
+    const d = DEMOS[currentDemo];
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514', max_tokens:1400,
+        system: d.system,
+        messages:[{role:'user', content:input}]
+      })
+    });
+    const data = await res.json();
+    const text = (data.content||[]).map(b=>b.text||'').join('');
+    typewrite(text);
+  } catch(e) {
+    document.getElementById('output-content').innerHTML = '<div class="error">Connection error. Please try again.</div>';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = DEMOS[currentDemo].btnLabel;
+  }
+}
+
+document.getElementById('user-input').addEventListener('keydown', e => {
+  if (e.key==='Enter' && (e.metaKey||e.ctrlKey)) runDemo();
+});
+</script>
+</body>
+</html>
